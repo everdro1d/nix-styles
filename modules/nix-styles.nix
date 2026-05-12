@@ -23,7 +23,11 @@ let
 
   min = a: b: if a < b then a else b;
   max = a: b: if a > b then a else b;
-  normalizeHue = hue: if hue == 360 then 0 else hue;
+  normalizeHue = hue:
+    let
+      scaled = hue - (builtins.floor (hue / 360.0) * 360);
+    in
+      if scaled < 0 then builtins.floor (scaled + 360) else builtins.floor scaled;
 
   hexDigitValues = {
     "0" = 0;
@@ -336,8 +340,8 @@ let
       freeformType = types.attrs;
     };
 
-  activeModeIsValid = builtins.elem cfg.activeTheme validThemeModes;
-  resolvedThemeMode = if activeModeIsValid then cfg.activeTheme else defaultActiveThemeMode;
+  activeThemeIsValid = builtins.elem cfg.activeTheme validThemeModes;
+  resolvedThemeMode = if activeThemeIsValid then cfg.activeTheme else defaultActiveThemeMode;
   activeThemeName = if resolvedThemeMode == "light" then cfg.lightTheme else cfg.darkTheme;
   selectedTheme =
     lib.attrsets.attrByPath
@@ -376,7 +380,7 @@ in
     activeTheme = mkOption {
       type = types.str;
       default = defaultActiveThemeMode;
-      apply = lib.strings.trim;
+      apply = value: lib.strings.toLower (lib.strings.trim value);
       description = "Active theme mode: \"light\" or \"dark\".";
     };
 
@@ -441,7 +445,7 @@ in
     ];
 
     warnings =
-      (lib.optional (!activeModeIsValid)
+      (lib.optional (!activeThemeIsValid)
         "nix-styles.activeTheme must be \"light\" or \"dark\"; falling back to \"${defaultActiveThemeMode}\".")
       ++ extraThemeWarnings;
 

@@ -43,7 +43,7 @@ nix-styles/
   nix-styles = {
     enable = true;
 
-    # "light" or "dark" (whitespace is trimmed automatically)
+    # "light" or "dark" (whitespace trimmed and lowercased automatically)
     activeTheme = builtins.readFile ./active-theme;
 
     lightTheme = "kanagawa-lotus";
