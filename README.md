@@ -113,6 +113,8 @@ Each color supports:
 * `config.nix-styles.colors.<name>.hsl`
 * `config.nix-styles.colors.<name>.<format>.inner` (numeric portion)
 
+Format accessors coerce to strings in string contexts (for example, `"${config.nix-styles.colors.bg.rgb}"`).
+
 ## Notes
 
 * `activeTheme` must be `"light"` or `"dark"`. Any other value triggers a warning and falls back to `"dark"`.
