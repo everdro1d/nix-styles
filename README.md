@@ -21,6 +21,8 @@ Declarative colorscheme helper for NixOS and Home Manager.
 }
 ```
 
+For reproducibility, pin to a tag or revision (for example, `github:everdro1d/nix-styles?ref=v0.1.0`).
+
 2. Create a `nix-styles` directory in your dotfiles:
 
 ```

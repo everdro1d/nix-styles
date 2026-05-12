@@ -3,11 +3,12 @@ let
   inherit (lib) mkIf mkOption types;
   cfg = config.nix-styles;
 
+  defaultActiveTheme = "dark";
   validThemeModes = [ "light" "dark" ];
 
   hexRegex = "^#?([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$";
-  rgbRegex = "^rgb[[:space:]]*\\([[:space:]]*([0-9]{1,3})[[:space:]]*,[[:space:]]*([0-9]{1,3})[[:space:]]*,[[:space:]]*([0-9]{1,3})[[:space:]]*\\)$";
-  hslRegex = "^hsl[[:space:]]*\\([[:space:]]*([0-9]{1,3})[[:space:]]*,[[:space:]]*([0-9]{1,3})%[[:space:]]*,[[:space:]]*([0-9]{1,3})%[[:space:]]*\\)$";
+  rgbRegex = "^rgb[ \\t]*\\([ \\t]*([0-9]{1,3})[ \\t]*,[ \\t]*([0-9]{1,3})[ \\t]*,[ \\t]*([0-9]{1,3})[ \\t]*\\)$";
+  hslRegex = "^hsl[ \\t]*\\([ \\t]*([0-9]{1,3})[ \\t]*,[ \\t]*([0-9]{1,3})%[ \\t]*,[ \\t]*([0-9]{1,3})%[ \\t]*\\)$";
 
   stringToCharList = value:
     builtins.genList
@@ -252,13 +253,14 @@ let
           reason = "Unsupported color format (expected hex, rgb(), or hsl()).";
         };
 
-  mkFormat = value: inner:
+  mkFormat = formattedValue: innerValue:
     rec {
-      value = value;
-      inner = inner;
-      __toString = _: value;
+      value = formattedValue;
+      inner = innerValue;
+      __toString = _: formattedValue;
     };
 
+  # Build a color accessor set with raw and converted formats.
   mkColor = name: raw:
     let
       parsed = parseColor raw;
@@ -329,7 +331,7 @@ let
     };
 
   activeThemeIsValid = builtins.elem cfg.activeTheme validThemeModes;
-  activeThemeMode = if activeThemeIsValid then cfg.activeTheme else "dark";
+  activeThemeMode = if activeThemeIsValid then cfg.activeTheme else defaultActiveTheme;
   activeThemeName = if activeThemeMode == "light" then cfg.lightTheme else cfg.darkTheme;
   selectedTheme =
     lib.attrsets.attrByPath
@@ -367,7 +369,7 @@ in
 
     activeTheme = mkOption {
       type = types.str;
-      default = "dark";
+      default = defaultActiveTheme;
       apply = lib.strings.trim;
       description = "Active theme mode: \"light\" or \"dark\".";
     };
@@ -434,7 +436,7 @@ in
 
     warnings =
       (lib.optional (!activeThemeIsValid)
-        "nix-styles.activeTheme must be \"light\" or \"dark\"; falling back to \"dark\".")
+        "nix-styles.activeTheme must be \"light\" or \"dark\"; falling back to \"${defaultActiveTheme}\".")
       ++ extraThemeWarnings;
 
     nix-styles = {
