@@ -4,6 +4,6 @@
   outputs = { self }:
     {
       nixosModules.default = import ./modules/nix-styles.nix;
-      homeManagerModules.default = import ./modules/nix-styles.nix;
+      homeModules.default = import ./modules/nix-styles.nix;
     };
 }

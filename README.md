@@ -1,6 +1,6 @@
 # nix-styles
 
-Declarative colorscheme helper for NixOS and Home Manager.
+Colorscheme helper for NixOS and Home Manager.
 
 ## Setup
 
@@ -21,9 +21,7 @@ Declarative colorscheme helper for NixOS and Home Manager.
 }
 ```
 
-For reproducibility, pin to a tag or revision (for example, `github:everdro1d/nix-styles?ref=v0.1.0`).
-
-2. Create a `nix-styles` directory in your dotfiles:
+2. Recommended Setup - Create a `nix-styles` directory:
 
 ```
 nix-styles/
@@ -43,7 +41,7 @@ nix-styles/
   nix-styles = {
     enable = true;
 
-    # "light" or "dark" (whitespace trimmed and lowercased automatically)
+    # accepts string "light" or "dark" (recommended to use a file for easy scripting).
     activeTheme = builtins.readFile ./active-theme;
 
     lightTheme = "kanagawa-lotus";
@@ -78,18 +76,12 @@ nix-styles/
 
     colors = {
       fg = "#FFFFFF";
-      bg = "#000000";
+      bg = "rgb(255,255,255)";
+      # and more...
     };
   };
 }
 ```
-
-### active-theme
-
-```
-dark
-```
-
 ## Usage
 
 Access colors from the active theme:
@@ -103,7 +95,7 @@ Access colors from the active theme:
   border.color = config.nix-styles.colors.bg.rgb;
 
   # Numeric-only accessor:
-  border.color = config.nix-styles.colors.bg.rgb.inner;
+  border.color = "rgb(${config.nix-styles.colors.bg.rgb.inner})";
 }
 ```
 
@@ -115,11 +107,9 @@ Each color supports:
 * `config.nix-styles.colors.<name>.hsl`
 * `config.nix-styles.colors.<name>.<format>.inner` (numeric portion)
 
-Format accessors coerce to strings in string contexts (for example, `"${config.nix-styles.colors.bg.rgb}"`).
-
 ## Notes
 
-* `activeTheme` must be `"light"` or `"dark"`. Any other value triggers a warning and falls back to `"dark"`.
+* `activeTheme` must be `"light"` or `"dark"`. Any other value falls back to `"dark"`.
 * `lightTheme` and `darkTheme` must reference existing entries in `nix-styles.themes`.
-* Extra attributes inside `nix-styles.themes` are ignored with a warning.
-* Invalid color strings fail evaluation when `strictColors = true`; set it to `false` to keep raw values.
+* Extra attributes inside `nix-styles.themes` are ignored.
+* Invalid color strings cause evaluation to fail when `strictColors = true`; set it to `false` to keep raw values.
