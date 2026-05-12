@@ -256,27 +256,28 @@ let
           reason = "Unsupported color format (expected hex, rgb(), or hsl()).";
         };
 
-  # Format objects expose an explicit value field and provide __toString for coercion.
+  # Build a format value with:
+  # - value: formatted string (e.g. "rgb(1,2,3)")
+  # - inner: numeric payload (e.g. "1,2,3")
   mkFormat = formattedValue: innerValue:
     rec {
       value = formattedValue;
       inner = innerValue;
-      __toString = _: formattedValue;
+      __toString = _: value;
     };
 
-  # Build a color accessor set:
-  # - value: raw string
-  # - hex/rgb/hsl: { value, inner, __toString }
-  # - __toString: raw string for string coercion
+  # Build normalized color data:
+  # - raw: raw declared string
+  # - hex/rgb/hsl: { value, inner }
   mkColor = name: raw:
     let
       parsed = parseColor raw;
-      fallback = rec {
-        value = raw;
+      fallback = {
+        raw = raw;
         hex = mkFormat raw raw;
         rgb = mkFormat raw raw;
         hsl = mkFormat raw raw;
-        __toString = _: value;
+        __toString = _: raw;
       };
     in
       if parsed.valid then
@@ -287,12 +288,12 @@ let
           rgbValue = "rgb(${rgbInner})";
           hslValue = "hsl(${hslInner})";
         in
-          rec {
-            value = raw;
+          {
+            raw = raw;
             hex = mkFormat hexValue parsed.hexInner;
             rgb = mkFormat rgbValue rgbInner;
             hsl = mkFormat hslValue hslInner;
-            __toString = _: value;
+            __toString = _: raw;
           }
       else if cfg.strictColors then
         throw "nix-styles: invalid color '${raw}' for '${name}'. ${parsed.reason}"
@@ -302,7 +303,21 @@ let
           fallback;
 
   mkColors = colors:
-    lib.attrsets.mapAttrs mkColor colors;
+    let
+      normalized = lib.attrsets.mapAttrs mkColor colors;
+      project = selector: lib.attrsets.mapAttrs (_: color: selector color) normalized;
+    in
+      {
+        raw = project (color: color.raw);
+        hex = project (color: color.hex.value);
+        rgb = project (color: color.rgb.value);
+        hsl = project (color: color.hsl.value);
+        inner = {
+          hex = project (color: color.hex.inner);
+          rgb = project (color: color.rgb.inner);
+          hsl = project (color: color.hsl.inner);
+        };
+      };
 
   themeModule = { name, ... }:
     {
@@ -394,7 +409,7 @@ in
       type = types.attrs;
       default = mkColors selectedTheme.colors;
       readOnly = true;
-      description = "Resolved colors for the active theme.";
+      description = "Resolved colors for the active theme, grouped by format.";
     };
 
   };

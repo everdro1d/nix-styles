@@ -87,23 +87,23 @@ Access colors from the active theme:
 ```nix
 {
   # Raw declared value:
-  background.color = config.nix-styles.colors.bg;
+  background.color = config.nix-styles.colors.raw.bg;
 
   # Converted value:
-  border.color = config.nix-styles.colors.bg.rgb;
+  border.color = config.nix-styles.colors.rgb.bg;
 
   # Numeric-only accessor:
-  border.color = "rgb(${config.nix-styles.colors.bg.rgb.inner})";
+  border.color = "rgb(${config.nix-styles.colors.inner.rgb.bg})";
 }
 ```
 
-Each color supports:
+Available accessors:
 
-* `config.nix-styles.colors.<name>` (raw value as declared)
-* `config.nix-styles.colors.<name>.hex`
-* `config.nix-styles.colors.<name>.rgb`
-* `config.nix-styles.colors.<name>.hsl`
-* `config.nix-styles.colors.<name>.<format>.inner` (numeric portion)
+* `config.nix-styles.colors.raw.<name>` (raw value as declared)
+* `config.nix-styles.colors.hex.<name>`
+* `config.nix-styles.colors.rgb.<name>`
+* `config.nix-styles.colors.hsl.<name>`
+* `config.nix-styles.colors.inner.<format>.<name>` (numeric portion)
 
 ## Notes
 
