@@ -336,8 +336,8 @@ let
       freeformType = types.attrs;
     };
 
-  activeThemeModeIsValid = builtins.elem cfg.activeTheme validThemeModes;
-  resolvedThemeMode = if activeThemeModeIsValid then cfg.activeTheme else defaultActiveThemeMode;
+  activeModeIsValid = builtins.elem cfg.activeTheme validThemeModes;
+  resolvedThemeMode = if activeModeIsValid then cfg.activeTheme else defaultActiveThemeMode;
   activeThemeName = if resolvedThemeMode == "light" then cfg.lightTheme else cfg.darkTheme;
   selectedTheme =
     lib.attrsets.attrByPath
@@ -441,7 +441,7 @@ in
     ];
 
     warnings =
-      (lib.optional (!activeThemeModeIsValid)
+      (lib.optional (!activeModeIsValid)
         "nix-styles.activeTheme must be \"light\" or \"dark\"; falling back to \"${defaultActiveThemeMode}\".")
       ++ extraThemeWarnings;
 

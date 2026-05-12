@@ -50,7 +50,7 @@ nix-styles/
     darkTheme = "kanagawa-wave";
 
     # Optional: allow invalid/legacy colors without failing evaluation.
-    strictColors = true;
+    strictColors = false;
   };
 }
 ```
