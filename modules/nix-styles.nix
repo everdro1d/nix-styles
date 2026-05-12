@@ -256,6 +256,9 @@ let
           reason = "Unsupported color format (expected hex, rgb(), or hsl()).";
         };
 
+  # Build a format value with:
+  # - value: formatted string (e.g. "rgb(1,2,3)")
+  # - inner: numeric payload (e.g. "1,2,3")
   mkFormat = formattedValue: innerValue: {
     value = formattedValue;
     inner = innerValue;
@@ -298,6 +301,7 @@ let
   mkColors = colors:
     let
       normalized = lib.attrsets.mapAttrs mkColor colors;
+      # Extract one field from each normalized color into an attrset keyed by color name.
       project = selector: lib.attrsets.mapAttrs (_: color: selector color) normalized;
     in
       {
