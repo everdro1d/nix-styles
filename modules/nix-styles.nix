@@ -3,7 +3,7 @@ let
   inherit (lib) mkIf mkOption types;
   cfg = config.nix-styles;
 
-  defaultActiveTheme = "dark";
+  defaultActiveThemeMode = "dark";
   validThemeModes = [ "light" "dark" ];
 
   hexRegex = "^#?([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$";
@@ -64,14 +64,14 @@ let
   decimalToInt = value:
     lib.lists.foldl'
       (acc: ch:
-        acc * 10 + (decimalDigitValues.${ch} or (throw "nix-styles: invalid decimal digit '${ch}'.")))
+        acc * 10 + (decimalDigitValues.${ch} or (throw "nix-styles: invalid decimal digit '${ch}' in '${value}'.")))
       0
       (stringToCharList value);
 
   hexToInt = value:
     lib.lists.foldl'
       (acc: ch:
-        acc * 16 + (hexDigitValues.${ch} or (throw "nix-styles: invalid hex digit '${ch}'.")))
+        acc * 16 + (hexDigitValues.${ch} or (throw "nix-styles: invalid hex digit '${ch}' in '${value}'.")))
       0
       (stringToCharList value);
 
@@ -260,7 +260,10 @@ let
       __toString = _: formattedValue;
     };
 
-  # Build a color accessor set with raw and converted formats.
+  # Build a color accessor set:
+  # - value: raw string
+  # - hex/rgb/hsl: { value, inner, __toString }
+  # - __toString: raw string for string coercion
   mkColor = name: raw:
     let
       parsed = parseColor raw;
@@ -331,8 +334,8 @@ let
     };
 
   activeThemeIsValid = builtins.elem cfg.activeTheme validThemeModes;
-  activeThemeMode = if activeThemeIsValid then cfg.activeTheme else defaultActiveTheme;
-  activeThemeName = if activeThemeMode == "light" then cfg.lightTheme else cfg.darkTheme;
+  resolvedThemeMode = if activeThemeIsValid then cfg.activeTheme else defaultActiveThemeMode;
+  activeThemeName = if resolvedThemeMode == "light" then cfg.lightTheme else cfg.darkTheme;
   selectedTheme =
     lib.attrsets.attrByPath
       [ activeThemeName ]
@@ -369,7 +372,7 @@ in
 
     activeTheme = mkOption {
       type = types.str;
-      default = defaultActiveTheme;
+      default = defaultActiveThemeMode;
       apply = lib.strings.trim;
       description = "Active theme mode: \"light\" or \"dark\".";
     };
@@ -436,7 +439,7 @@ in
 
     warnings =
       (lib.optional (!activeThemeIsValid)
-        "nix-styles.activeTheme must be \"light\" or \"dark\"; falling back to \"${defaultActiveTheme}\".")
+        "nix-styles.activeTheme must be \"light\" or \"dark\"; falling back to \"${defaultActiveThemeMode}\".")
       ++ extraThemeWarnings;
 
     nix-styles = {
