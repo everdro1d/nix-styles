@@ -28,7 +28,7 @@ nix-styles/
 | themes/
 | | kanagawa-lotus.nix
 | | kanagawa-wave.nix
-| active-theme
+| is-dark
 | default.nix
 | nix-styles.nix
 ```
@@ -41,8 +41,8 @@ nix-styles/
   nix-styles = {
     enable = true;
 
-    # accepts string "light" or "dark" (recommended to use a file for easy scripting).
-    activeTheme = builtins.readFile ./active-theme;
+    # boolean - accepts true or false (recommended to use a file for easy scripting).
+    isDark = (lib.strings.trim (builtins.readFile ./is-dark) == "dark");
 
     lightTheme = "kanagawa-lotus";
     darkTheme = "kanagawa-wave";
@@ -72,8 +72,6 @@ nix-styles/
 { ... }:
 {
   nix-styles.themes.kanagawa-wave = {
-    theme.dark = true;
-
     colors = {
       fg = "#FFFFFF";
       bg = "rgb(255,255,255)";
@@ -109,7 +107,7 @@ Each color supports:
 
 ## Notes
 
-* `activeTheme` must be `"light"` or `"dark"`. Any other value falls back to `"dark"`.
+* `activeTheme` returns the name of the active theme.
 * `lightTheme` and `darkTheme` must reference existing entries in `nix-styles.themes`.
 * Extra attributes inside `nix-styles.themes` are ignored.
 * Invalid color strings cause evaluation to fail when `strictColors = true`; set it to `false` to keep raw values.
