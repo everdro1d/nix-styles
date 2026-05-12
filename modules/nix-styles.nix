@@ -415,7 +415,6 @@ in
 
     nix-styles = {
       colors = mkColors selectedTheme.colors;
-      isDark = cfg.isDark;
       activeTheme = cfg.activeTheme;
     };
   };
