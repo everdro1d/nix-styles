@@ -259,10 +259,12 @@ let
   # Build a format value with:
   # - value: formatted string (e.g. "rgb(1,2,3)")
   # - inner: numeric payload (e.g. "1,2,3")
-  mkFormat = formattedValue: innerValue: {
-    value = formattedValue;
-    inner = innerValue;
-  };
+  mkFormat = formattedValue: innerValue:
+    rec {
+      value = formattedValue;
+      inner = innerValue;
+      __toString = _: value;
+    };
 
   # Build normalized color data:
   # - raw: raw declared string
@@ -275,6 +277,7 @@ let
         hex = mkFormat raw raw;
         rgb = mkFormat raw raw;
         hsl = mkFormat raw raw;
+        __toString = _: raw;
       };
     in
       if parsed.valid then
@@ -290,6 +293,7 @@ let
             hex = mkFormat hexValue parsed.hexInner;
             rgb = mkFormat rgbValue rgbInner;
             hsl = mkFormat hslValue hslInner;
+            __toString = _: raw;
           }
       else if cfg.strictColors then
         throw "nix-styles: invalid color '${raw}' for '${name}'. ${parsed.reason}"
