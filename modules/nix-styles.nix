@@ -214,7 +214,7 @@ let
           bValue = decimalToInt (builtins.elemAt rgbMatch 2);
           rgb = { r = rValue; g = gValue; b = bValue; };
         in
-          if rValue > 255 || gValue > 255 || bValue > 255 then
+          if rValue < 0 || gValue < 0 || bValue < 0 || rValue > 255 || gValue > 255 || bValue > 255 then
             {
               valid = false;
               reason = "RGB values must be between 0 and 255.";
@@ -237,10 +237,10 @@ let
           lValue = decimalToInt (builtins.elemAt hslMatch 2);
           hsl = { h = hValue; s = sValue; l = lValue; };
         in
-          if hValue > 360 || sValue > 100 || lValue > 100 then
+          if hValue < 0 || sValue < 0 || lValue < 0 || hValue > 360 || sValue > 100 || lValue > 100 then
             {
               valid = false;
-              reason = "HSL values must be h: 0-360, s/l: 0-100.";
+              reason = "HSL values must be h: 0-360 (360 treated as 0), s/l: 0-100.";
             }
           else
             let
