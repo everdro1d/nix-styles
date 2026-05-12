@@ -112,3 +112,7 @@ Available accessors:
 * Extra attributes inside `nix-styles.themes` are ignored.
 * Invalid color strings cause evaluation to fail when `strictColors = true`; set it to `false` to keep raw values.
 * Accessors are format-first (`colors.rgb.<name>`) instead of name-first (`colors.<name>.rgb`).
+* Migration examples:
+  * `colors.<name>` -> `colors.raw.<name>`
+  * `colors.<name>.rgb` -> `colors.rgb.<name>`
+  * `colors.<name>.rgb.inner` -> `colors.inner.rgb.<name>`
