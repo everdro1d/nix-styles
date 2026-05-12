@@ -9,6 +9,7 @@ let
   hexRegex = "^#?([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$";
   rgbRegex = "^rgb[ \\t]*\\([ \\t]*([0-9]{1,3})[ \\t]*,[ \\t]*([0-9]{1,3})[ \\t]*,[ \\t]*([0-9]{1,3})[ \\t]*\\)$";
   hslRegex = "^hsl[ \\t]*\\([ \\t]*([0-9]{1,3})[ \\t]*,[ \\t]*([0-9]{1,3})%[ \\t]*,[ \\t]*([0-9]{1,3})%[ \\t]*\\)$";
+  defaultTheme = { colors = { }; theme = { dark = false; }; };
 
   stringToCharList = value:
     builtins.genList
@@ -333,13 +334,13 @@ let
       freeformType = types.attrs;
     };
 
-  activeThemeIsValid = builtins.elem cfg.activeTheme validThemeModes;
-  resolvedThemeMode = if activeThemeIsValid then cfg.activeTheme else defaultActiveThemeMode;
+  activeThemeModeIsValid = builtins.elem cfg.activeTheme validThemeModes;
+  resolvedThemeMode = if activeThemeModeIsValid then cfg.activeTheme else defaultActiveThemeMode;
   activeThemeName = if resolvedThemeMode == "light" then cfg.lightTheme else cfg.darkTheme;
   selectedTheme =
     lib.attrsets.attrByPath
       [ activeThemeName ]
-      { colors = { }; theme = { dark = false; }; }
+      defaultTheme
       cfg.themes;
 
   extraThemeWarnings =
@@ -438,7 +439,7 @@ in
     ];
 
     warnings =
-      (lib.optional (!activeThemeIsValid)
+      (lib.optional (!activeThemeModeIsValid)
         "nix-styles.activeTheme must be \"light\" or \"dark\"; falling back to \"${defaultActiveThemeMode}\".")
       ++ extraThemeWarnings;
 
