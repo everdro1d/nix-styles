@@ -3,7 +3,13 @@ let
   inherit (lib) mkIf mkOption types;
   cfg = config.nix-styles;
 
-  stringToChars = value:
+  validThemeModes = [ "light" "dark" ];
+
+  hexRegex = "^#?([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$";
+  rgbRegex = "^rgb[[:space:]]*\\([[:space:]]*([0-9]{1,3})[[:space:]]*,[[:space:]]*([0-9]{1,3})[[:space:]]*,[[:space:]]*([0-9]{1,3})[[:space:]]*\\)$";
+  hslRegex = "^hsl[[:space:]]*\\([[:space:]]*([0-9]{1,3})[[:space:]]*,[[:space:]]*([0-9]{1,3})%[[:space:]]*,[[:space:]]*([0-9]{1,3})%[[:space:]]*\\)$";
+
+  stringToCharList = value:
     builtins.genList
       (index: builtins.substring index 1 value)
       (builtins.stringLength value);
@@ -59,14 +65,14 @@ let
       (acc: ch:
         acc * 10 + (decimalDigitValues.${ch} or (throw "nix-styles: invalid decimal digit '${ch}'.")))
       0
-      (stringToChars value);
+      (stringToCharList value);
 
   hexToInt = value:
     lib.lists.foldl'
       (acc: ch:
         acc * 16 + (hexDigitValues.${ch} or (throw "nix-styles: invalid hex digit '${ch}'.")))
       0
-      (stringToChars value);
+      (stringToCharList value);
 
   hexDigitsUpper = [
     "0" "1" "2" "3" "4" "5" "6" "7" "8" "9" "A" "B" "C" "D" "E" "F"
@@ -167,16 +173,16 @@ let
 
   parseColor = raw:
     let
-      hexMatch = builtins.match "^#?([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$" raw;
-      rgbMatch = builtins.match "^rgb[[:space:]]*\\([[:space:]]*([0-9]{1,3})[[:space:]]*,[[:space:]]*([0-9]{1,3})[[:space:]]*,[[:space:]]*([0-9]{1,3})[[:space:]]*\\)$" raw;
-      hslMatch = builtins.match "^hsl[[:space:]]*\\([[:space:]]*([0-9]{1,3})[[:space:]]*,[[:space:]]*([0-9]{1,3})%[[:space:]]*,[[:space:]]*([0-9]{1,3})%[[:space:]]*\\)$" raw;
+      hexMatch = builtins.match hexRegex raw;
+      rgbMatch = builtins.match rgbRegex raw;
+      hslMatch = builtins.match hslRegex raw;
     in
       if hexMatch != null then
         let
           rawHex = builtins.elemAt hexMatch 0;
           expandedHex =
             if builtins.stringLength rawHex == 3 then
-              builtins.concatStringsSep "" (map (ch: ch + ch) (stringToChars rawHex))
+              builtins.concatStringsSep "" (map (ch: ch + ch) (stringToCharList rawHex))
             else
               rawHex;
           hexInner = lib.strings.toUpper expandedHex;
@@ -322,7 +328,7 @@ let
       freeformType = types.attrs;
     };
 
-  activeThemeIsValid = builtins.elem cfg.activeTheme [ "light" "dark" ];
+  activeThemeIsValid = builtins.elem cfg.activeTheme validThemeModes;
   activeThemeMode = if activeThemeIsValid then cfg.activeTheme else "dark";
   activeThemeName = if activeThemeMode == "light" then cfg.lightTheme else cfg.darkTheme;
   selectedTheme =
