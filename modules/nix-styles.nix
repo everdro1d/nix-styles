@@ -392,30 +392,10 @@ in
 
     colors = mkOption {
       type = types.attrs;
-      default = { };
+      default = mkColors selectedTheme.colors;
       readOnly = true;
       description = "Resolved colors for the active theme.";
     };
 
-  };
-
-  config = mkIf cfg.enable {
-    assertions = [
-      {
-        assertion = cfg.lightTheme != "" && builtins.hasAttr cfg.lightTheme cfg.themes;
-        message = "nix-styles.lightTheme must reference an existing theme (got '${cfg.lightTheme}').";
-      }
-      {
-        assertion = cfg.darkTheme != "" && builtins.hasAttr cfg.darkTheme cfg.themes;
-        message = "nix-styles.darkTheme must reference an existing theme (got '${cfg.darkTheme}').";
-      }
-    ];
-
-    warnings = extraThemeWarnings;
-
-    nix-styles = {
-      colors = mkColors selectedTheme.colors;
-      activeTheme = cfg.activeTheme;
-    };
   };
 }
