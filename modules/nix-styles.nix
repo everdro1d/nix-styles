@@ -3,13 +3,10 @@ let
   inherit (lib) mkIf mkOption types;
   cfg = config.nix-styles;
 
-  defaultActiveThemeMode = "dark";
-  validThemeModes = [ "light" "dark" ];
-
   hexRegex = "^#?([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$";
   rgbRegex = "^rgb[ \\t]*\\([ \\t]*([0-9]{1,3})[ \\t]*,[ \\t]*([0-9]{1,3})[ \\t]*,[ \\t]*([0-9]{1,3})[ \\t]*\\)$";
   hslRegex = "^hsl[ \\t]*\\([ \\t]*([0-9]{1,3})[ \\t]*,[ \\t]*([0-9]{1,3})%[ \\t]*,[ \\t]*([0-9]{1,3})%[ \\t]*\\)$";
-  defaultTheme = { colors = { }; theme = { dark = false; }; };
+  defaultTheme = { colors = { }; };
 
   stringToCharList = value:
     builtins.genList
@@ -317,20 +314,6 @@ let
           description = "Theme name derived from the attribute key.";
         };
 
-        theme = mkOption {
-          type = types.submodule {
-            options = {
-              dark = mkOption {
-                type = types.bool;
-                description = "Whether this theme is a dark theme.";
-              };
-            };
-            freeformType = types.attrs;
-          };
-          default = { };
-          description = "Theme metadata.";
-        };
-
         colors = mkOption {
           type = types.attrsOf types.str;
           default = { };
@@ -340,9 +323,7 @@ let
       freeformType = types.attrs;
     };
 
-  activeThemeIsValid = builtins.elem cfg.activeTheme validThemeModes;
-  resolvedThemeMode = if activeThemeIsValid then cfg.activeTheme else defaultActiveThemeMode;
-  activeThemeName = if resolvedThemeMode == "light" then cfg.lightTheme else cfg.darkTheme;
+  activeThemeName = if cfg.isDark then cfg.darkTheme else cfg.lightTheme;
   selectedTheme =
     lib.attrsets.attrByPath
       [ activeThemeName ]
@@ -356,17 +337,10 @@ let
           extraTop =
             builtins.attrNames
               (lib.attrsets.removeAttrs themeConfig [ "name" "theme" "colors" "_module" ]);
-          extraTheme =
-            builtins.attrNames
-              (lib.attrsets.removeAttrs (themeConfig.theme or { }) [ "dark" "_module" ]);
         in
           (map
             (field: "nix-styles.themes.${themeName}.${field} is not supported and will be ignored.")
-            extraTop)
-          ++
-          (map
-            (field: "nix-styles.themes.${themeName}.theme.${field} is not supported and will be ignored.")
-            extraTheme))
+            extraTop))
       cfg.themes);
 in
 {
@@ -377,23 +351,22 @@ in
       description = "Enable nix-styles output values.";
     };
 
-    activeTheme = mkOption {
-      type = types.str;
-      default = defaultActiveThemeMode;
-      apply = value: lib.strings.toLower (lib.strings.trim value);
-      description = "Active theme mode: \"light\" or \"dark\".";
+    isDark = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether the active theme is dark.";
     };
 
     lightTheme = mkOption {
       type = types.str;
       default = "";
-      description = "Theme name used when activeTheme is \"light\".";
+      description = "Theme name used when isDark is false.";
     };
 
     darkTheme = mkOption {
       type = types.str;
       default = "";
-      description = "Theme name used when activeTheme is \"dark\".";
+      description = "Theme name used when isDark is true.";
     };
 
     strictColors = mkOption {
@@ -408,50 +381,21 @@ in
       description = "Theme definitions.";
     };
 
+# --- read only ---
+
+    activeTheme = mkOption {
+      type = types.str;
+      default = activeThemeName;
+      readOnly = true;
+      description = "Name of the active theme.";
+    };
+
     colors = mkOption {
       type = types.attrs;
-      default = { };
+      default = mkColors selectedTheme.colors;
       readOnly = true;
       description = "Resolved colors for the active theme.";
     };
 
-    theme = mkOption {
-      type = types.submodule {
-        options = {
-          dark = mkOption {
-            type = types.bool;
-            default = false;
-            readOnly = true;
-            description = "Whether the active theme is dark.";
-          };
-        };
-      };
-      default = { };
-      readOnly = true;
-      description = "Resolved theme metadata.";
-    };
-  };
-
-  config = mkIf cfg.enable {
-    assertions = [
-      {
-        assertion = cfg.lightTheme != "" && builtins.hasAttr cfg.lightTheme cfg.themes;
-        message = "nix-styles.lightTheme must reference an existing theme (got '${cfg.lightTheme}').";
-      }
-      {
-        assertion = cfg.darkTheme != "" && builtins.hasAttr cfg.darkTheme cfg.themes;
-        message = "nix-styles.darkTheme must reference an existing theme (got '${cfg.darkTheme}').";
-      }
-    ];
-
-    warnings =
-      (lib.optional (!activeThemeIsValid)
-        "nix-styles.activeTheme must be \"light\" or \"dark\"; falling back to \"${defaultActiveThemeMode}\".")
-      ++ extraThemeWarnings;
-
-    nix-styles = {
-      colors = mkColors selectedTheme.colors;
-      theme.dark = selectedTheme.theme.dark;
-    };
   };
 }
