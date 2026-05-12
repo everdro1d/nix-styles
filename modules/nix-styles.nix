@@ -23,6 +23,7 @@ let
 
   min = a: b: if a < b then a else b;
   max = a: b: if a > b then a else b;
+  normalizeHue = hue: if hue == 360 then 0 else hue;
 
   hexDigitValues = {
     "0" = 0;
@@ -122,14 +123,14 @@ let
       lightPct = roundInt (lightness * 100.0);
     in
       {
-        h = if hueDeg == 360 then 0 else hueDeg;
+        h = normalizeHue hueDeg;
         s = satPct;
         l = lightPct;
       };
 
   hslToRgb = hsl:
     let
-      hue = (if hsl.h == 360 then 0 else hsl.h) / 360.0;
+      hue = (normalizeHue hsl.h) / 360.0;
       saturation = hsl.s / 100.0;
       lightness = hsl.l / 100.0;
       hueToRgb = p: q: t:
@@ -254,6 +255,7 @@ let
           reason = "Unsupported color format (expected hex, rgb(), or hsl()).";
         };
 
+  # Format objects expose an explicit value field and provide __toString for coercion.
   mkFormat = formattedValue: innerValue:
     rec {
       value = formattedValue;
