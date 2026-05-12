@@ -111,3 +111,4 @@ Available accessors:
 * `lightTheme` and `darkTheme` must reference existing entries in `nix-styles.themes`.
 * Extra attributes inside `nix-styles.themes` are ignored.
 * Invalid color strings cause evaluation to fail when `strictColors = true`; set it to `false` to keep raw values.
+* Accessors are format-first (`colors.rgb.<name>`) instead of name-first (`colors.<name>.rgb`).
