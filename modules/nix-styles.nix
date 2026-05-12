@@ -305,6 +305,7 @@ let
   mkColors = colors:
     let
       normalized = lib.attrsets.mapAttrs mkColor colors;
+      # Extract one field from each normalized color into an attrset keyed by color name.
       project = selector: lib.attrsets.mapAttrs (_: color: selector color) normalized;
     in
       {
