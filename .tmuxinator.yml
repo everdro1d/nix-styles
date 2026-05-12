@@ -1,0 +1,9 @@
+name: nix-styles
+root: <%= ENV["PROJECTS"] %>/nix-styles
+#pre_window: nix develop
+startup_window: editor
+windows:
+  - editor:
+      - nvim .
+  - term:
+  - git-lg: lazygit
