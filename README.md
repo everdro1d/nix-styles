@@ -2,9 +2,31 @@
 
 Colorscheme helper for NixOS and Home Manager.
 
+This tool allows you to create colorschemes/ themes, select a light & dark theme, switch between them very easily, and have a "one source of truth" for all your coloring needs.
+
+> Why this? All I needed was a simple way to switch colorschemes, Stylix (among others) is good but did way too much for my needs. As such, nix-styles now exists to serve the purpose.
+
+## Overview & TOC
+
+Start by creating a colorscheme and defining colors in said scheme. Then call upon the color variables in your needed format from your configuration.
+
+- [Setup](#setup)
+  - [1. Add the flake input and module:](#1-add-the-flake-input-and-module)
+    - [As a nixos module](#as-a-nixos-module)
+    - [Or via home-manager](#or-via-home-manager)
+  - [2. (Recommended Setup) Create a `nix-styles` directory:](#2-recommended-setup-create-a-nix-styles-directory)
+    - [nix-styles.nix](#nix-stylesnix)
+    - [default.nix](#defaultnix)
+    - [theme-file.nix](#theme-filenix)
+  - [(Optional) Theme Switching Script](#optional-theme-switching-script)
+- [Usage](#usage)
+- [Additional Accessors & Notes](#additional-accessors--notes)
+
 ## Setup
 
-1. Add the flake input and module:
+### 1. Add the flake input and module:
+
+#### As a nixos module
 
 ```nix
 {
@@ -21,7 +43,27 @@ Colorscheme helper for NixOS and Home Manager.
 }
 ```
 
-2. Recommended Setup - Create a `nix-styles` directory:
+#### Or via home-manager
+
+```nix
+{
+  inputs = {
+    home-manager.url = "github:nix-community/home-manager";
+    nix-styles.url = "github:everdro1d/nix-styles";
+  };
+
+  outputs = { home-manager, nix-styles, ... }: {
+    homeConfigurations.my-user = home-manager.lib.homeManagerConfiguration {
+      modules = [
+        nix-styles.homeModules.default
+        ./nix-styles/default.nix
+      ];
+    };
+  };
+}
+```
+
+### 2. (Recommended Setup) Create a `nix-styles` directory:
 
 ```
 nix-styles/
@@ -66,7 +108,7 @@ nix-styles/
 }
 ```
 
-### Theme file
+### theme-file.nix
 
 ```nix
 { ... }:
@@ -80,6 +122,40 @@ nix-styles/
   };
 }
 ```
+
+### (Optional) Theme Switching Script
+
+```bash
+#!/usr/bin/env bash
+
+THEME_FILE="$NIX_DOTFILES/home-manager/nix-styles/is-dark"
+CURRENT=$(cat "$THEME_FILE")
+
+if [ "$CURRENT" == "dark" ]; then
+    NEW="light"
+else
+    NEW="dark"
+fi
+
+echo "$NEW" > "$THEME_FILE"
+
+notify-send "Theme Switching" "'$CURRENT' > '$NEW'\nReady for rebuild."
+
+sudo nixos-rebuild switch --flake "$NIX_DOTFILES"
+
+STATUS=$?
+
+if [ $STATUS -eq 0 ]; then
+    # tmux needs to re-source the config to update colors.
+    pgrep "tmux" > /dev/null && tmux source-file ~/.config/tmux/tmux.conf
+    notify-send "Theme Switched" "New theme is: '$NEW'"
+else
+    echo "$CURRENT" > "$THEME_FILE"
+    notify-send "Theme Switch Cancelled" "'$NEW' > '$CURRENT'\nRebuild failed."
+fi
+
+```
+
 ## Usage
 
 Access colors from the active theme:
@@ -105,9 +181,8 @@ Available accessors:
 * `config.nix-styles.colors.hsl.<name>`
 * `config.nix-styles.colors.inner.<format>.<name>` (numeric portion)
 
-## Notes
+## Additional Accessors & Notes
 
 * `activeTheme` returns the name of the active theme.
 * `lightTheme` and `darkTheme` must reference existing entries in `nix-styles.themes`.
-* Extra attributes inside `nix-styles.themes` are ignored.
 * Invalid color strings cause evaluation to fail when `strictColors = true`; set it to `false` to keep raw values.
