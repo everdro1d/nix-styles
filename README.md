@@ -19,6 +19,7 @@ Start by creating a colorscheme and defining colors in said scheme. Then call up
     - [default.nix](#defaultnix)
     - [theme-file.nix](#theme-filenix)
   - [(Optional) Theme Switching Script](#optional-theme-switching-script)
+  - [(Extra) Write color info to file](#extra-write-color-info-to-file)
 - [Usage](#usage)
 - [Additional Accessors & Notes](#additional-accessors--notes)
 
@@ -155,6 +156,60 @@ else
 fi
 
 ```
+
+### (Extra) Write color info to file
+Example home-manager configuration for writing the active colors and theme information to a file.
+
+```nix
+{ self, config, lib, pkgs, ... }:
+let
+  darkFileContent = lib.strings.trim (builtins.readFile ./is-dark);
+
+  theme-switch = pkgs.writeScriptBin "theme-switch" (builtins.readFile (self + /utils/theme-switch));
+
+  mkColorFileContent = format:
+    lib.concatStringsSep "\n"
+      (lib.mapAttrsToList
+        (key: value: ''${key}: "${value}"'')
+        config.nix-styles.colors.${format})
+    + "\n";
+
+  themesFileContent =
+    ''active: "${config.nix-styles.activeTheme}"'' + "\n" +
+    ''light: "${config.nix-styles.lightTheme}"'' + "\n" +
+    ''dark: "${config.nix-styles.darkTheme}"'' + "\n";
+
+  colorFiles =
+    lib.genAttrs [ "hex" "rgb" "hsl"] (format: pkgs.writeText format (mkColorFileContent format));
+in
+{
+  nix-styles = {
+    enable = true;
+
+    isDark = (darkFileContent == "dark");
+
+    lightTheme = "kanagawa-lotus";
+    darkTheme = "kanagawa-wave";
+
+    strictColors = true;
+  };
+
+  home = {
+    packages = [
+      theme-switch
+    ];
+
+    file = {
+      ".config/nix-styles/is-dark".source = pkgs.writeText "is-dark" darkFileContent;
+      ".config/nix-styles/themes".source = pkgs.writeText "themes" themesFileContent;
+    } // (lib.mapAttrs' (format: derivation:
+      lib.nameValuePair ".config/nix-styles/${format}" { source = derivation; }
+    ) colorFiles);
+  };
+}
+
+```
+
 
 ## Usage
 
