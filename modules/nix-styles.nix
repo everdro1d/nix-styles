@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ lib, config, pkgs, options, ... }:
 let
   inherit (lib) mkIf mkOption types;
   cfg = config.nix-styles;
@@ -358,6 +358,43 @@ let
             (field: "nix-styles.themes.${themeName}.${field} is not supported and will be ignored.")
             extraTop))
       cfg.themes);
+
+  # --- write helpers ---
+
+  mkFormatFileContent = format:
+    lib.concatStringsSep "\n"
+      (lib.mapAttrsToList
+        (key: value: ''${key}: "${value}"'')
+        cfg.colors.${format})
+    + "\n";
+
+  themesFileContent =
+    ''active: "${cfg.activeTheme}"'' + "\n" +
+    ''light: "${cfg.lightTheme}"'' + "\n" +
+    ''dark: "${cfg.darkTheme}"'' + "\n";
+
+  writeStoreFiles =
+    lib.genAttrs cfg.write.formats
+      (format: pkgs.writeText format (mkFormatFileContent format));
+
+  themesStoreFile = pkgs.writeText "themes" themesFileContent;
+
+  mkSymlinkScript =
+    let
+      formatLines =
+        lib.concatMapStringsSep "\n"
+          (format:
+            "ln -sf '${writeStoreFiles.${format}}' '${cfg.write.directory}/${format}'")
+          cfg.write.formats;
+      themesLine =
+        lib.optionalString cfg.write.themes
+          "ln -sf '${themesStoreFile}' '${cfg.write.directory}/themes'";
+    in
+      ''
+        mkdir -p '${cfg.write.directory}'
+        ${formatLines}
+        ${themesLine}
+      '';
 in
 {
   options.nix-styles = {
@@ -413,5 +450,59 @@ in
       description = "Resolved colors for the active theme, grouped by format.";
     };
 
+    write = mkOption {
+      description = "Options for writing color theme files to disk.";
+      default = { };
+      type = types.submodule {
+        options = {
+          enabled = mkOption {
+            type = types.bool;
+            default = false;
+            description = "Whether to write color theme files.";
+          };
+
+          formats = mkOption {
+            type = types.listOf (types.enum [ "hex" "rgb" "hsl" ]);
+            default = [ "hex" "rgb" "hsl" ];
+            description = "Formats to write. Valid values: \"hex\", \"rgb\", \"hsl\".";
+          };
+
+          directory = mkOption {
+            type = types.str;
+            default = "";
+            description = "Directory to symlink the generated files into.";
+          };
+
+          themes = mkOption {
+            type = types.bool;
+            default = true;
+            description = "Whether to write a file containing the active, light, and dark theme names.";
+          };
+        };
+      };
+    };
+
   };
+
+  config = lib.mkIf (cfg.enable && cfg.write.enabled) (
+    let
+      warnIfNoDir =
+        lib.warnIf (cfg.write.directory == "")
+          "nix-styles: write.enabled is true but write.directory is empty; no files will be symlinked.";
+      isHomeManager = builtins.hasAttr "home" options;
+      activationEntry =
+        if isHomeManager then
+          {
+            home.activation.nix-styles-write =
+              lib.hm.dag.entryAfter [ "writeBoundary" ] mkSymlinkScript;
+          }
+        else
+          {
+            system.activationScripts.nix-styles-write.text = mkSymlinkScript;
+          };
+    in
+      warnIfNoDir (
+        lib.mkIf (cfg.write.directory != "") activationEntry
+      )
+  );
 }
